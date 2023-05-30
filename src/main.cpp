@@ -1,3 +1,11 @@
+
+/*
+  This code calculates the distance covered by a wheel attached to the JGB37-520 DC Geared motor
+  Note: The calculations assume the wheel run at a constant speed over the distance specified
+  Author: Edwin Mwiti
+  Email: emwiti658@mail.com
+*/
+
 #include <Arduino.h>
 
 /* Debug code 
@@ -25,12 +33,13 @@ otherwise set it to 0 to suppress all Serial print statements
 
 #define PULSES_PER_REV  150  // this was measured manually before-hand
 #define RPM_TO_RADS 0.1047198; // 1 rpm  = 0.1047198 rad/s
+#define WHEEL_RADIUS 0.035  // radius of the wheel attached to the motor 0.035 m
 
 volatile long pulse_count = 0;
 bool direction = false;  // true if motor is moving forward, false if motor is moving reverse
 
 /* Sampling interval 1 second */
-int sampling_interval = 1000;
+int sampling_interval = 500;
 long current_millis = 0;
 long previous_millis = 0;
 
@@ -72,7 +81,7 @@ void pulse_isr(){
 
 int calculate_distance(volatile long p){
   /* p => pulses that the ISR has registered */
-  
+
   return 0;
 }
 
@@ -108,14 +117,21 @@ void loop() {
     /* calculate angular velocity in degrees */
     angular_velocity_in_degrees = angular_velocity_in_rads * RAD_TO_DEG; // 1 rad = 57.2958 deg, inbuilt
 
+    /* Calculate the linear velocity (m/s): linear velocity = radius x angular velocity  */
+    linear_velocity = angular_velocity_in_rads * WHEEL_RADIUS;
+
+    /* calculate the distance travelled (meters): distance = speed * time */
+    distance = linear_velocity * (sampling_interval/1000); // same as linear_velocity x sampling time in seconds
+
     /* debug on the serial monitor */
-    debug("RPM: "); debugln(revs_per_minute);
+    // debug("Angular velocity: "); debugln(angular_velocity_in_rads);
+    debug("Linear velocity: "); debugln(linear_velocity);
+    // debug("Distance: "); debugln(distance);
 
     /* end of debug */
 
     /* reset the pulse count */
     pulse_count = 0;
-
   }
 
 }
