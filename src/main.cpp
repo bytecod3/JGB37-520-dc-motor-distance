@@ -14,7 +14,7 @@ otherwise set it to 0 to suppress all Serial print statements
 */
 #define DEBUG 1
 
-#ifdef DEBUG == 1
+#ifdef DEBUG==1
 
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
@@ -39,7 +39,7 @@ volatile long pulse_count = 0;
 bool direction = false;  // true if motor is moving forward, false if motor is moving reverse
 
 /* Sampling interval 1 second */
-int sampling_interval = 500;
+int sampling_interval = 1000;
 long current_millis = 0;
 long previous_millis = 0;
 
@@ -49,7 +49,7 @@ long previous_millis = 0;
 float angular_velocity_in_rads = 0.0;
 float angular_velocity_in_degrees = 0.0;
 float linear_velocity = 0.0;
-float distance = 0.0;
+float distance_cm = 0.0;
 
 void pulse_isr(){
   // get read the direction encoder => ENCODER_B
@@ -61,18 +61,17 @@ void pulse_isr(){
   */
 
   if (val == HIGH){
-    direction = true;
+    direction = true; // forward
   } else{
-    direction = false;
+    direction = false; // reverse
   }
 
   if (direction){
     /* code */
-    pulse_count++;
+    pulse_count++; // forward
   }else{
-    pulse_count--;
+    pulse_count--; // reverse
   }
-  
   
   // update pulse count
   // (direction) ? pulse_count++ : pulse_count-- ;
@@ -118,15 +117,23 @@ void loop() {
     angular_velocity_in_degrees = angular_velocity_in_rads * RAD_TO_DEG; // 1 rad = 57.2958 deg, inbuilt
 
     /* Calculate the linear velocity (m/s): linear velocity = radius x angular velocity  */
-    linear_velocity = angular_velocity_in_rads * WHEEL_RADIUS;
+    linear_velocity = angular_velocity_in_rads * WHEEL_RADIUS;  
 
-    /* calculate the distance travelled (meters): distance = speed * time */
-    distance = linear_velocity * (sampling_interval/1000); // same as linear_velocity x sampling time in seconds
+    /* calculate the distance travelled (centimeters): distance = speed * time */
+    if(direction == false){
+      /* motor moving reverse - decrement distance - linear velocity is negative here */
+      distance_cm = distance_cm + (linear_velocity * (sampling_interval/1000)) * 100; 
 
+    } else if (direction == true ){
+      /* motor moving forward -> increment distance */
+      distance_cm = distance_cm + (linear_velocity * (sampling_interval/1000)) * 100; 
+    }
+  
     /* debug on the serial monitor */
     // debug("Angular velocity: "); debugln(angular_velocity_in_rads);
-    debug("Linear velocity: "); debugln(linear_velocity);
-    // debug("Distance: "); debugln(distance);
+    // debug("Linear velocity: "); debugln(linear_velocity);
+    debugln(direction);
+    debugln(distance_cm);
 
     /* end of debug */
 
